@@ -1,33 +1,41 @@
-````markdown
-# Semantic Cache & Clustering Engine (Trademarkia AI/ML Task)
+Here is the comprehensive, updated `README.md`. I’ve integrated the **Docker Compose** instructions, the **"Fuzzy" clustering justifications**, and the **Clean Code** structural details (like the `models.py` separation).
 
-A lightweight semantic search system built on the **20 Newsgroups** dataset. This project implements fuzzy clustering for topic discovery, a custom "first principles" semantic cache, and a high-performance FastAPI service.
+---
+
+# 🧠 Semantic Cache & Clustering Engine
+
+A production-ready semantic search service built for the **Trademarkia AI/ML Task**. This system leverages the **20 Newsgroups** dataset to provide high-speed, intent-aware retrieval using fuzzy clustering and a "first principles" semantic cache.
 
 ---
 
 ## 🚀 Quick Start (Production-Ready)
 
-### Option A: Docker (Recommended)
+### Option A: Docker Compose (Recommended)
 
-The easiest way to run the service with all dependencies and pre-indexed data:
+The most robust way to run the service. This handles environment isolation, system dependencies for ChromaDB, and data persistence.
 
 ```bash
-docker build -t trademarkia-engine .
-docker run -p 8000:8000 trademarkia-engine
+# Build and start the service
+docker-compose up --build
+
+# The service will be available at http://localhost:8000
+# Documentation (Swagger) is at http://localhost:8000/docs
+
 ```
-````
 
 ### Option B: Local Setup (using `uv`)
 
+If you prefer to run natively, ensure you have [uv](https://github.com/astral-sh/uv) installed.
+
 ```bash
-# Install dependencies
+# 1. Install dependencies
 uv sync
 
-# Build index, generate embeddings, and train GMM clusters
+# 2. Build index & train Fuzzy Clusters
 uv run scripts/ingest_and_cluster.py
 
-# Start the FastAPI server
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 3. Start the FastAPI server
+uv run uvicorn app.main:app --reload
 
 ```
 
@@ -35,49 +43,54 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## 🧠 Architectural Design Decisions
 
-### 1. Data Cleaning & Preprocessing
+### 1. Data Cleaning & Noise Reduction (Part 1)
 
-The 20 Newsgroups dataset is inherently noisy (email headers, PGP signatures, and nested quotes).
+The 20 Newsgroups corpus contains significant metadata noise.
 
-- **Deliberate Choice:** I implemented a regex-based pipeline to strip metadata and nested `>` quotes. This ensures the model embeds the **original content** rather than "email echoes," leading to much cleaner clusters.
+- **Choices:** I implemented regex-based stripping of email headers (`Path`, `Lines`, `Organization`), PGP signatures, and nested quote blocks (`>`).
+- **Justification:** This prevents the model from clustering documents based on "email style" or shared signatures, forcing it to focus on the **core semantic body** of the post.
 
-### 2. Part 2: Fuzzy Clustering (GMM)
+### 2. Fuzzy Clustering via GMM (Part 2)
 
-Instead of hard assignments like K-Means, I used **Gaussian Mixture Models (GMM)**.
+The task required a "distribution, not a label."
 
-- **The "Fuzzy" Factor:** GMM provides a probability distribution across all 20 clusters.
-- **Justification:** Real-world data is messy; a post about "encryption laws" belongs to both _Politics_ and _Technology_. My system reflects this by assigning documents to clusters with varying degrees of membership.
+- **Model:** I used **Gaussian Mixture Models (GMM)** with a tied covariance matrix.
+- **Fuzzy Assignment:** Unlike K-Means, GMM provides a probability vector across all 20 topics. This captures documents that straddle multiple domains (e.g., a post about "Encryption Laws" belonging to both _Politics_ and _Cryptography_).
+- **Proof:** Run `uv run scripts/analyze_clusters.py` to see the semantic consistency of the generated clusters.
 
-### 3. Part 3: Semantic Cache (First Principles)
+### 3. "First Principles" Semantic Cache (Part 3)
 
-Built without Redis or external middleware to demonstrate core algorithmic understanding.
+Built to demonstrate an understanding of algorithmic efficiency without relying on third-party Redis modules.
 
-- **Cluster-Aware Efficiency:** The cache is partitioned by the **Dominant Cluster ID**. When a query comes in, the system only performs similarity checks within that cluster's bucket, preventing linear $O(N)$ lookup degradation as the cache grows.
-- **The Tunable Decision ($\tau$):** I have set the similarity threshold to **0.88**.
-- _Insight:_ A threshold of 0.95 acts like a hash-map (too strict), while 0.75 introduces semantic drift. 0.88 captures synonymous intent (e.g., "fix a car" vs "auto repair") while maintaining precision.
+- **Cluster-Aware Retrieval:** Queries are first assigned to a **Dominant Cluster**. Similarity search is then restricted to that cluster's specific "bucket" in memory.
+- **Scalability:** This reduces lookup complexity from $O(N)$ to approximately $O(N/20)$, ensuring the system remains fast as the cache grows.
+- **Tunable Decision ($\tau$):** The similarity threshold is set to **0.88**.
+- _High (0.95+):_ High precision, but misses synonyms (acts like a hash map).
+- _Low (0.75):_ High hit rate, but risks "semantic hallucinations."
+- _Sweet Spot (0.88):_ Correct matches "fix a flat tire" with "repairing a punctured wheel."
 
 ---
 
-## 🛠️ API Endpoints
+## 🛠️ API Documentation
 
-| Method   | Endpoint       | Description                                              |
-| -------- | -------------- | -------------------------------------------------------- |
-| `POST`   | `/query`       | Embeds query, checks semantic cache, and returns result. |
-| `GET`    | `/cache/stats` | Returns hit/miss counts and cache efficiency.            |
-| `DELETE` | `/cache`       | Flushes the in-memory cache and resets stats.            |
+| Method   | Endpoint       | Description                                               |
+| -------- | -------------- | --------------------------------------------------------- |
+| `POST`   | `/query`       | Embeds query, checks cluster-aware cache, then Vector DB. |
+| `GET`    | `/cache/stats` | Returns hit rate, miss count, and total entries.          |
+| `DELETE` | `/cache`       | Flushes the in-memory cache and resets statistics.        |
 
 ---
 
 ## 📊 System Validation
 
-To verify the semantic cache and clustering, run the included test suite:
+To verify that the system correctly distinguishes between a **Cache Miss** and a **Semantic Hit**, run:
 
 ```bash
 uv run scripts/test_api.py
 
 ```
 
-This script demonstrates a **Cache Miss** followed by a **Semantic Hit** (using different words for the same intent), proving the cache's ability to recognize semantic similarity.
+This script performs a cold query, then a semantically similar query, and validates that the `hit_rate` updates correctly using the `CacheStats` Pydantic model.
 
 ---
 
@@ -85,28 +98,19 @@ This script demonstrates a **Cache Miss** followed by a **Semantic Hit** (using 
 
 ```text
 ├── app/
-│   ├── main.py          # FastAPI service & state management
-│   ├── cache.py         # Custom Semantic Cache (First Principles)
-│   └── models.py        # Pydantic schemas
+│   ├── main.py           # FastAPI orchestration & lifespan management
+│   ├── cache.py          # Custom Semantic Cache logic
+│   ├── models.py         # Pydantic Request/Response schemas
+│   └── __init__.py
 ├── scripts/
-│   ├── ingest_and_cluster.py  # Part 1 & 2 logic
-│   ├── analyze_clusters.py    # Cluster semantic proof
-│   └── test_api.py            # API validation
-├── data/                      # Vector DB storage (Gitignored)
-├── Dockerfile                 # Containerization
-└── pyproject.toml             # uv managed dependencies
+│   ├── ingest_and_cluster.py  # Data ingestion, GMM training, and DB storage
+│   ├── analyze_clusters.py    # Cluster semantic analysis tool
+│   └── test_api.py            # Automated API testing suite
+├── data/                 # Persistent Vector DB storage (Volume mapped)
+├── Dockerfile            # System-level dependencies & build logic
+├── docker-compose.yml    # Orchestration & volume configuration
+└── pyproject.toml        # Dependency management
 
 ```
 
-```
-
-
-
-### 💡 Final Steps
-1. **Sync your `uv.lock`**: Run `uv lock` to make sure the environment is reproducible.
-2. **Double-check the Form**: Fill out the [Trademarkia Submission Form](https://forms.gle/4RpHZpAi8rbG9QCE8).
-3. **Collaborator Access**: Ensure `recruitments@trademarkia.com` has access to the private or public repo.
-
-**You're all set! Do you need anything else before you hit "Submit"?**
-
-```
+---
