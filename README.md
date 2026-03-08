@@ -1,11 +1,7 @@
-Here is the comprehensive, updated `README.md`. I’ve integrated the **Docker Compose** instructions, the **"Fuzzy" clustering justifications**, and the **Clean Code** structural details (like the `models.py` separation).
-
 ---
-
 # 🧠 Semantic Cache & Clustering Engine
 
 A production-ready semantic search service built for the **Trademarkia AI/ML Task**. This system leverages the **20 Newsgroups** dataset to provide high-speed, intent-aware retrieval using fuzzy clustering and a "first principles" semantic cache.
-
 ---
 
 ## 🚀 Quick Start (Production-Ready)
