@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+
+# uv / Project
+.python-version
+uv.lock
+
+# Data & Models
+data/
+20news-bydate/
+20news-bydate-train/
+20news-bydate-test/
+*.tar.gz
+*.pkl
+*.joblib
+
+# Vector DB & Cache
+.chroma/
+vector_index/
+semantic_cache_storage.json
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store

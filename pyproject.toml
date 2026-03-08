@@ -1,0 +1,16 @@
+[project]
+name = "semantic-cache-clustering-engine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.2",
+    "fastapi>=0.135.1",
+    "numpy>=2.4.2",
+    "pandas>=3.0.1",
+    "scikit-learn>=1.8.0",
+    "sentence-transformers>=5.2.3",
+    "tqdm>=4.67.3",
+    "uvicorn>=0.41.0",
+]
