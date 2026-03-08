@@ -1,7 +1,3 @@
-This is the most important part of your submission. Recruiters at **Trademarkia** will likely read this **README** before they even touch your code. It needs to look professional, explain your high-level engineering choices, and provide a clear "one-command" setup.
-
-### 📄 `README.md`
-
 ````markdown
 # Semantic Cache & Clustering Engine (Trademarkia AI/ML Task)
 
