@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from sentence_transformers import SentenceTransformer
 from chromadb.api.models.Collection import Collection
 from chromadb.api import ClientAPI
-from pydantic import BaseModel
 from typing import Optional, cast, Any
 
 # Import the custom cache
@@ -44,17 +43,7 @@ app = FastAPI(title="Trademarkia Semantic Search", lifespan=lifespan)
 
 
 # --- Schemas ---
-class QueryRequest(BaseModel):
-    query: str
-
-
-class QueryResponse(BaseModel):
-    query: str
-    cache_hit: bool
-    matched_query: Optional[str] = None
-    similarity_score: Optional[float] = None
-    result: str
-    dominant_cluster: int
+from .models import QueryRequest, QueryResponse, CacheStats
 
 
 # --- Helper Logic ---
@@ -124,7 +113,7 @@ async def perform_query(request: QueryRequest):
     )
 
 
-@app.get("/cache/stats")
+@app.get("/cache/stats", response_model=CacheStats)
 async def get_cache_stats():
     return state.cache.get_stats()
 
